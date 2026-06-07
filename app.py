@@ -5,7 +5,7 @@ import plotly.express as px
 import numpy as np
 from db_config import save_project, load_project, get_all_project_names, delete_project
 
-# Page configuration
+# Konfigurasi halaman
 st.set_page_config(
     page_title="Dashboard Ekonomi Lapangan Migas",
     page_icon="⬛",
@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for clean dark theme
+# Custom CSS
 st.markdown("""
     <style>
     .main {
@@ -42,13 +42,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Title
+# Header
 st.markdown("<h1 style='text-align: center;'>Sistem Analisis Ekonomi Lapangan Migas</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #b0b0b0;'>Perhitungan Cash Flow & Indikator Ekonomi</h3>", unsafe_allow_html=True)
 st.markdown("---")
 
-# Sidebar inputs
-# Team members section
+# Sidebar - Info kelompok
 st.sidebar.markdown("### Kelompok")
 st.sidebar.markdown("""
 **Danang Adiwibowo**  
@@ -59,20 +58,16 @@ st.sidebar.markdown("""
 """)
 st.sidebar.markdown("---")
 
-# Project Management Section
 st.sidebar.subheader("Manajemen Proyek")
 
-# Get all saved projects
 saved_projects = get_all_project_names()
 
-# Dropdown to select existing project
 selected_project = st.sidebar.selectbox(
     "Muat Proyek Tersimpan",
     options=["-- Proyek Baru --"] + saved_projects,
     key="project_selector"
 )
 
-# Load project data if selected
 if selected_project != "-- Proyek Baru --":
     if st.sidebar.button("Muat Proyek"):
         loaded_data = load_project(selected_project)
@@ -81,16 +76,13 @@ if selected_project != "-- Proyek Baru --":
             st.sidebar.success(f"Proyek '{selected_project}' berhasil dimuat!")
             st.rerun()
 
-# Initialize session state for loaded project
 if 'loaded_project' not in st.session_state:
     st.session_state['loaded_project'] = None
 
-# Get values from loaded project or use defaults
 loaded = st.session_state['loaded_project']
 
 st.sidebar.markdown("---")
 
-# Project duration
 project_duration = st.sidebar.number_input(
     "Jangka Waktu Proyek (tahun)", 
     min_value=1, 
@@ -99,12 +91,10 @@ project_duration = st.sidebar.number_input(
     step=1
 )
 
-# Validation: Project duration must be at least 7 years
 if project_duration < 7:
-    st.sidebar.error("⚠️ Jangka waktu proyek harus minimal 7 tahun!")
+    st.sidebar.error("Jangka waktu proyek harus minimal 7 tahun!")
     st.sidebar.warning("Data produksi membutuhkan input untuk Tahun 1 sampai 7.")
 
-# Investment
 st.sidebar.subheader("Investasi")
 capital_investment = st.sidebar.number_input(
     "Investasi Capital ($M)", 
@@ -120,7 +110,6 @@ non_capital_investment = st.sidebar.number_input(
 )
 total_investment = capital_investment + non_capital_investment
 
-# Production data for first 7 years
 st.sidebar.subheader("Data Produksi (Tahun 1-7)")
 production_year_1 = st.sidebar.number_input(
     "Produksi Tahun 1 (Mbbl)", 
@@ -165,7 +154,6 @@ production_year_7 = st.sidebar.number_input(
     step=1.0
 )
 
-# Decline rate
 decline_rate = st.sidebar.slider(
     "Laju Penurunan Produksi (%)", 
     min_value=0.0, 
@@ -174,7 +162,6 @@ decline_rate = st.sidebar.slider(
     step=0.1
 )
 
-# Oil price
 oil_price = st.sidebar.number_input(
     "Harga Minyak Rata-rata ($/bbl)", 
     min_value=0.0, 
@@ -182,7 +169,6 @@ oil_price = st.sidebar.number_input(
     step=1.0
 )
 
-# Opex
 opex_per_year = st.sidebar.number_input(
     "Biaya Operasional per Tahun (Opex) ($M)", 
     min_value=0.0, 
@@ -190,14 +176,12 @@ opex_per_year = st.sidebar.number_input(
     step=10.0
 )
 
-# Depreciation method
 depreciation_method = st.sidebar.selectbox(
     "Metode Depresiasi", 
     ["Straight Line", "Declining Balance", "Unit of Production"],
     index=["Straight Line", "Declining Balance", "Unit of Production"].index(loaded['depreciation_method']) if loaded else 0
 )
 
-# Tax rate
 tax_rate = st.sidebar.slider(
     "Tarif Pajak (%)", 
     min_value=0.0, 
@@ -206,7 +190,6 @@ tax_rate = st.sidebar.slider(
     step=0.5
 ) / 100
 
-# Discount rate for NPV
 discount_rate = st.sidebar.slider(
     "Tingkat Diskonto untuk NPV (%)", 
     min_value=0.0, 
@@ -215,7 +198,7 @@ discount_rate = st.sidebar.slider(
     step=0.5
 ) / 100
 
-# Save Project Section
+# Simpan proyek
 st.sidebar.markdown("---")
 st.sidebar.subheader("Simpan Proyek")
 project_name = st.sidebar.text_input("Nama Proyek", value=selected_project if selected_project != "-- Proyek Baru --" else "")
@@ -244,8 +227,8 @@ with col_save:
                 'oil_price': oil_price,
                 'opex_per_year': opex_per_year,
                 'depreciation_method': depreciation_method,
-                'tax_rate': tax_rate * 100,  # Convert back to percentage
-                'discount_rate': discount_rate * 100  # Convert back to percentage
+                'tax_rate': tax_rate * 100,
+                'discount_rate': discount_rate * 100
             }
             if save_project(project_data):
                 st.sidebar.success(f"Proyek '{project_name}' berhasil disimpan!")
@@ -266,50 +249,41 @@ with col_delete:
             st.sidebar.warning("Tidak ada proyek yang dipilih untuk dihapus!")
 
 
-# Calculate production for all years
+# Hitung produksi untuk tahun berikutnya
 production_data = [
     production_year_1, production_year_2, production_year_3, production_year_4,
     production_year_5, production_year_6, production_year_7
 ]
 
-# Validation check before calculation
 if project_duration < 7:
-    st.error("⚠️ Kesalahan: Jangka waktu proyek harus minimal 7 tahun!")
+    st.error("Kesalahan: Jangka waktu proyek harus minimal 7 tahun!")
     st.warning("Silakan sesuaikan jangka waktu proyek di panel samping untuk melanjutkan.")
     st.info("Input data produksi membutuhkan data dari Tahun 1 sampai Tahun 7 (minimal 7 tahun).")
-    st.stop()  # Stop execution until fixed
+    st.stop()
 
-# Calculate production for remaining years with decline rate
 last_production = production_year_7
 for year in range(8, project_duration + 1):
     next_production = last_production * (1 - decline_rate / 100)
     production_data.append(next_production)
     last_production = next_production
 
-# Calculate depreciation using different methods
+# Hitung depresiasi berdasarkan metode yang dipilih
 if depreciation_method == "Straight Line":
-    # Straight Line: Di = Total Investment / Project Duration
-    # Depresiasi sama setiap tahun
     depreciation_per_year = [total_investment / project_duration] * project_duration
     
 elif depreciation_method == "Declining Balance":
-    # Declining Balance: Double Declining Balance method
-    # Rate = 2 / Project Duration
-    # Di = Book Value × Rate
     rate = 2 / project_duration
     book_value = total_investment
     depreciation_per_year = []
     
     for year in range(project_duration):
         depreciation = book_value * rate
-        # Pastikan tidak melebihi sisa book value
         if depreciation > book_value:
             depreciation = book_value
         depreciation_per_year.append(depreciation)
         book_value -= depreciation
         
-else:  # Unit of Production
-    # Unit of Production: Di = (Total Investment / Total Production) × Production per Year
+else:
     total_production = sum(production_data)
     depreciation_per_year = []
     
@@ -317,7 +291,7 @@ else:  # Unit of Production
         depreciation = (total_investment / total_production) * prod
         depreciation_per_year.append(depreciation)
 
-# Build calculation table
+# Buat tabel perhitungan
 years = list(range(0, project_duration + 1))
 data = {
     'Year': years,
@@ -329,31 +303,23 @@ data = {
     'Depreciation ($M)': [0] + depreciation_per_year,
 }
 
-# Calculate taxable income, tax, and NCF
-# Formula:
-# Taxable Income = Income - Opex - Di
-# Tax = Tax Rate × Taxable Income
-# NCF Undiscounted = Taxable Income - Tax
+# Hitung taxable income, tax, dan NCF
 taxable_income = []
 tax = []
 ncf = []
 
 for i in range(len(years)):
     if i == 0:
-        # Year 0: Only investment, no income
         taxable_income.append(0)
         tax.append(0)
         ncf.append(-total_investment)
     else:
-        # Taxable Income = Income - Opex - Di
         ti = data['Income ($M)'][i] - data['Opex ($M)'][i] - data['Depreciation ($M)'][i]
         taxable_income.append(ti)
         
-        # Tax = Tax Rate × Taxable Income (only if positive)
         t = ti * tax_rate if ti > 0 else 0
         tax.append(t)
         
-        # NCF Undiscounted = Taxable Income - Tax
         ncf_value = ti - t
         ncf.append(ncf_value)
 
@@ -361,16 +327,12 @@ data['Taxable Income ($M)'] = taxable_income
 data['Tax ($M)'] = tax
 data['NCF Undiscounted ($M)'] = ncf
 
-# Create DataFrame
 df = pd.DataFrame(data)
 
-# Calculate economic indicators
+# Hitung indikator ekonomi
 total_ncf = sum(ncf)
-
-# NPV calculation
 npv = sum([ncf[i] / ((1 + discount_rate) ** i) for i in range(len(ncf))])
 
-# Payback period (POT)
 cumulative_ncf = np.cumsum(ncf)
 pot = None
 for i, cum_ncf in enumerate(cumulative_ncf):
@@ -380,12 +342,10 @@ for i, cum_ncf in enumerate(cumulative_ncf):
 if pot is None:
     pot = "N/A"
 
-# ROR (simplified IRR approximation)
-# For simplicity, we'll calculate a basic ROR
 total_revenue = sum([data['Income ($M)'][i] for i in range(1, len(years))])
 ror = ((total_ncf / total_investment) * 100) if total_investment > 0 else 0
 
-# Display KPI metrics
+# Tampilkan indikator ekonomi
 st.subheader("Indikator Ekonomi Utama")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -403,13 +363,11 @@ with col4:
 
 st.markdown("---")
 
-# Charts section
 st.subheader("Analisis Teknis")
 
 col_chart1, col_chart2 = st.columns(2)
 
 with col_chart1:
-    # Production profile chart
     fig_production = go.Figure()
     fig_production.add_trace(go.Scatter(
         x=df['Year'][1:],
@@ -437,7 +395,6 @@ with col_chart1:
     st.plotly_chart(fig_production, use_container_width=True)
 
 with col_chart2:
-    # Cash flow trend chart
     fig_cashflow = go.Figure()
     
     fig_cashflow.add_trace(go.Scatter(
@@ -480,7 +437,6 @@ with col_chart2:
     
     st.plotly_chart(fig_cashflow, use_container_width=True)
 
-# Cumulative NCF chart
 st.subheader("Aliran Kas Bersih Kumulatif")
 fig_cumulative = go.Figure()
 
@@ -515,23 +471,19 @@ st.plotly_chart(fig_cumulative, use_container_width=True)
 
 st.markdown("---")
 
-# Data table
 st.subheader("Tabel Perhitungan Detail")
 
-# Format the dataframe for display
 df_display = df.copy()
 for col in df_display.columns:
     if col != 'Year':
         df_display[col] = df_display[col].apply(lambda x: f"{x:,.2f}")
 
-# Style the dataframe
 st.dataframe(
     df_display,
     use_container_width=True,
     height=400
 )
 
-# Download button
 st.download_button(
     label="Unduh Tabel Perhitungan (CSV)",
     data=df.to_csv(index=False).encode('utf-8'),
@@ -539,7 +491,6 @@ st.download_button(
     mime='text/csv',
 )
 
-# Footer
 st.markdown("---")
 st.markdown(
     "<p style='text-align: center; color: #808080;'>Sistem Analisis Ekonomi Lapangan Migas</p>",
